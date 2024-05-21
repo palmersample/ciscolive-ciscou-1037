@@ -1,0 +1,37 @@
+---
+- name: Example configuration playbook
+  hosts: all
+  tasks:
+    - name: Configure the hostname
+      cisco.ios.ios_hostname:
+        config:
+          hostname: "{{ inventory_hostname_short }}"
+
+    - name: Configure NTP servers
+      cisco.ios.ios_ntp_global:
+        config:
+          servers:
+            - server: "{{ item }}"
+      loop: "{{ ntp_servers }}"
+
+    - name: Disable DNS lookups
+      cisco.ios.ios_config:
+        lines:
+          - no ip domain lookup
+
+    - name: Configure initial device settings
+      cisco.ios.ios_config:
+        lines:
+          - logging synchronous
+          - exec-timeout 15 0
+          - login local
+        parents: "{{ item }}"
+      loop:
+        - line con 0
+        - line vty 0 4
+        - line vty 5 15
+
+    - name: Save the running configuration
+      cisco.ios.ios_command:
+        commands:
+          - wri mem
